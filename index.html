@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>土方開挖回填計算 | Earthwork Cut & Fill Volume</title>
+<script src="https://yj-chen0830.github.io/jrh-core/jrh-core.js?v=3" defer></script>
+<style>
+  :root{--navy:#0b1f3a;--navy2:#13284a;--gold:#c9a14a;--gold2:#e0bf6e;--bg:#f5f3ee;--ink:#1c2530;--line:#d8d2c2;--soft:#f9f7f2;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Noto Sans TC","Segoe UI",sans-serif;background:var(--bg);color:var(--ink);}
+  header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#f5f3ee;padding:28px 32px;}
+  header h1{margin:0;font-size:22px;}
+  header span{color:var(--gold2);font-size:13px;display:block;margin-top:4px;}
+  main{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+  .grid{display:grid;grid-template-columns:400px 1fr;gap:24px;}
+  @media(max-width:920px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px 24px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+  .card h2{font-size:14.5px;margin:0 0 18px;color:var(--navy);font-weight:700;display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--gold);padding-bottom:10px;}
+  label{display:block;font-size:12px;color:#666;margin:10px 0 4px;font-weight:500;}
+  input{width:100%;padding:8px 11px;border:1.5px solid var(--line);border-radius:7px;font-size:13.5px;background:#fafaf8;}
+  input:focus{outline:none;border-color:var(--gold);}
+  .sec{font-size:12px;font-weight:700;color:var(--navy);margin:16px 0 6px;border-left:4px solid var(--gold);padding-left:9px;letter-spacing:.04em;text-transform:uppercase;}
+  .note{font-size:11.5px;color:#777;margin-top:12px;line-height:1.75;background:var(--soft);border-radius:6px;padding:9px 12px;}
+  button.calc-btn,button.pro-btn,button.add-btn,button.row-del{border:none;border-radius:8px;cursor:pointer;font-weight:700;}
+  button.calc-btn{margin-top:16px;width:100%;padding:12px;background:var(--navy);color:#fff;font-size:14.5px;}
+  button.calc-btn:hover{background:var(--navy2);}
+  button.pro-btn{margin-top:12px;width:100%;padding:12px;background:var(--gold);color:var(--navy);font-size:14.5px;}
+  button.pro-btn:hover{filter:brightness(1.08);}
+  button.add-btn{width:100%;padding:10px 12px;background:#eef2f7;color:var(--navy);font-size:13px;border:1px dashed #9ca8ba;margin-top:10px;}
+  button.add-btn:hover{background:#e4ebf4;}
+  table{width:100%;border-collapse:collapse;margin-top:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  th{background:var(--navy);color:#f5f3ee;font-weight:600;font-size:12px;padding:9px 10px;text-align:left;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  td{padding:9px 10px;font-size:13px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr:nth-child(even) td{background:#f9f7f3;}
+  .num{text-align:right;font-weight:700;}
+  .ok{color:#1a7d3a;font-weight:700;}
+  .ng{color:#c0392b;font-weight:700;}
+  .station-list{display:grid;gap:10px;margin-top:10px;}
+  .station-row{border:1px solid var(--line);border-radius:10px;background:#fcfbf8;padding:12px;}
+  .station-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .station-title{font-size:13px;font-weight:700;color:var(--navy);}
+  button.row-del{padding:7px 10px;background:#efe5df;color:#8f2d20;font-size:12px;}
+  button.row-del:hover{background:#e6d6ce;}
+  .station-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .station-tip{font-size:11px;color:#8a867d;margin-top:8px;line-height:1.6;}
+  .summary-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;}
+  .summary-box{border:1px solid var(--line);border-radius:10px;background:#fbfaf7;padding:12px;}
+  .summary-box strong{display:block;font-size:12px;color:#5f6770;margin-bottom:6px;}
+  .summary-box span{display:block;font-size:20px;font-weight:800;color:var(--navy);}
+  .summary-box em{display:block;font-style:normal;font-size:12px;color:#777;margin-top:5px;line-height:1.5;}
+  details.proc{margin-top:16px;border:1px solid var(--line);border-radius:8px;background:#fafaf8;overflow:hidden;}
+  details.proc summary{cursor:pointer;padding:10px 14px;font-weight:700;font-size:13px;color:var(--navy);user-select:none;list-style:none;display:flex;align-items:center;gap:6px;}
+  details.proc summary::before{content:"▶";font-size:10px;transition:transform .2s;}
+  details[open].proc summary::before{transform:rotate(90deg);}
+  details.proc pre{margin:0;padding:12px 16px 16px;font-family:"Courier New",monospace;font-size:11.5px;line-height:1.9;white-space:pre-wrap;color:#2c3e50;border-top:1px solid var(--line);}
+  .proj-section{background:#fff;border:1px solid var(--gold);border-radius:10px;padding:18px 22px;margin-bottom:20px;}
+  .proj-section h3{margin:0 0 12px;color:var(--navy);font-size:14px;font-weight:700;}
+  .proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:600px){.proj-grid,.station-grid,.summary-strip{grid-template-columns:1fr;}}
+  .mob-tabs{display:none;}
+  @media screen and (max-width:767px){
+    .mob-tabs{display:flex;background:var(--bg);border-bottom:2px solid var(--line);margin:0 -20px 0;padding:0 20px;}
+    .mob-tab{flex:1;padding:11px 4px;text-align:center;font-size:13.5px;font-weight:700;color:#888;cursor:pointer;background:transparent;border:none;border-bottom:3px solid transparent;}
+    .mob-tab.active{color:var(--navy);border-bottom-color:var(--gold);}
+    .grid{display:block;}
+    .grid>.card{display:none;}
+    .grid>.card.mob-active{display:block;}
+  }
+  @media print{
+    header,.no-print{display:none!important;}
+    body{background:#fff;margin:0;font-size:9pt;line-height:1.5;color:#111;}
+    main{padding:0;max-width:100%!important;}
+    .grid{grid-template-columns:1fr!important;gap:10pt!important;}
+    .card{box-shadow:none!important;border:1px solid #ccc!important;border-radius:4pt!important;padding:10pt 12pt!important;break-inside:avoid;}
+    .card h2{font-size:10.5pt!important;padding-bottom:6pt!important;margin-bottom:9pt!important;}
+    label{font-size:8pt!important;margin:6pt 0 2pt!important;}
+    .sec{font-size:8pt!important;margin:10pt 0 4pt!important;}
+    .note{font-size:7.5pt!important;padding:6pt 9pt!important;}
+    .station-row,.summary-box{break-inside:avoid;}
+    table{border:1px solid #bbb!important;border-radius:0!important;margin-top:6pt!important;}
+    th{font-size:8pt!important;padding:5pt 7pt!important;background:#0b1f3a!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td{font-size:8.5pt!important;padding:5pt 7pt!important;}
+    tr:nth-child(even) td{background:#f5f5f5!important;}
+    details.proc{display:block!important;margin-top:10pt!important;border:1pt solid #0b1f3a!important;border-radius:4pt!important;break-inside:avoid;background:#f9f9f6!important;}
+    details.proc>summary{display:none!important;}
+    details.proc::before{content:"📋  計算過程（供第三方檢核）";display:block;font-weight:700;font-size:8pt;color:#0b1f3a;padding:6pt 10pt 4pt;border-bottom:1px solid #ccc;letter-spacing:.04em;}
+    details.proc>pre{font-size:7pt!important;line-height:1.65!important;white-space:pre-wrap!important;padding:6pt 10pt 10pt!important;color:#1a1a1a!important;font-family:"Courier New",monospace!important;}
+    .proj-section{border:1.5pt solid #0b1f3a!important;border-radius:4pt!important;}
+    button.pro-btn,button.calc-btn,button.add-btn,button.row-del{display:none!important;}
+    @page{margin:15mm 12mm;size:A4;}
+  }
+</style>
+</head>
+<body data-tool="ew">
+<header>
+  <a href="https://yj-chen0830.github.io/engineering-hub/" style="color:var(--gold2);font-size:12.5px;text-decoration:none;display:inline-block;margin-bottom:8px;">← 返回工程計算中心</a>
+  <h1>土方開挖回填計算</h1>
+  <span>平均端面積法計算土方量 · 多測站累積方量</span>
+</header>
+<main>
+
+<div class="proj-section no-print" id="projSection">
+  <h3>📁 專案資訊（列印時帶入計算書封面）</h3>
+  <div class="proj-grid">
+    <div><label>工程名稱</label><input id="pj-name" placeholder="○○工程"></div>
+    <div><label>工程地點</label><input id="pj-loc" placeholder="○○市○○區"></div>
+    <div><label>承造廠商</label><input id="pj-contractor" placeholder="○○營造股份有限公司"></div>
+    <div><label>文件編號</label><input id="pj-docno" placeholder="EW-CAL-001"></div>
+    <div><label>計算者</label><input id="pj-calc" placeholder="姓名"></div>
+    <div><label>審核者</label><input id="pj-review" placeholder="姓名"></div>
+    <div><label>計算日期</label><input id="pj-date" type="date"></div>
+  </div>
+</div>
+
+<div class="mob-tabs">
+  <button class="mob-tab active" onclick="switchMobTab('ew-in',this)">📋 輸入參數</button>
+  <button class="mob-tab" id="mobTab-ew-r" onclick="switchMobTab('ew-r',this)">📊 計算結果</button>
+</div>
+<div class="grid">
+  <div class="card mob-active" data-tab="ew-in">
+    <h2>測站資料輸入</h2>
+    <div class="sec">平均端面積法（Average End Area Method）</div>
+    <div id="ew-stations" class="station-list"></div>
+    <button class="add-btn no-print" type="button" onclick="addStation()">+ 新增測站</button>
+    <button class="calc-btn" type="button" onclick="calcEW()">計算土方開挖回填量</button>
+    <div class="note">平均端面積法為工程估算常用簡化法，斷面積應由實測地形或設計斷面圖量取；地質不均勻、有機質土壤及壓實係數未納入本計算，正式數量計算應由測量及大地工程師複核。</div>
+  </div>
+  <div class="card" data-tab="ew-r">
+    <h2>計算結果</h2>
+    <div id="ew-result"><p style="color:#888">尚未計算</p></div>
+    <details class="proc" id="ew-proc" style="display:none">
+      <summary>📋 計算過程（供第三方檢核）</summary>
+      <pre id="ew-proc-text"></pre>
+    </details>
+    <button class="pro-btn no-print" onclick="openPro()">📄 產出計算書 PDF</button>
+  </div>
+</div>
+
+</main>
+<script>
+var ewStations = [
+  {distance:0, cut:10, fill:0},
+  {distance:20, cut:15, fill:2},
+  {distance:25, cut:5, fill:8}
+];
+
+function switchMobTab(name,btn){
+  btn.parentElement.querySelectorAll('.mob-tab').forEach(function(t){t.classList.remove('active');});
+  btn.classList.add('active');
+  btn.parentElement.nextElementSibling.querySelectorAll('.card').forEach(function(c){
+    c.classList.toggle('mob-active',c.dataset.tab===name);
+  });
+}
+function openPro(){ JRH.checkEmail(function(){ jrhPrint('土方開挖回填計算書'); }); }
+function f1(x){return x.toFixed(1);}
+function f2(x){return x.toFixed(2);}
+
+function stationRowHtml(station,index){
+  var isFirst=index===0;
+  return ''+
+    '<div class="station-row">'+
+      '<div class="station-head">'+
+        '<div class="station-title">測站'+(index+1)+'</div>'+
+        '<button class="row-del no-print" type="button" onclick="deleteStation('+index+')" '+(ewStations.length<=2?'disabled':'')+'>刪除</button>'+
+      '</div>'+
+      '<div class="station-grid">'+
+        '<div><label>測站距離 (m)</label><input type="number" step="0.01" value="'+station.distance+'" oninput="updateStation('+index+',\'distance\',this.value)"></div>'+
+        '<div><label>開挖斷面積 (m²)</label><input type="number" step="0.01" value="'+station.cut+'" oninput="updateStation('+index+',\'cut\',this.value)"></div>'+
+        '<div><label>回填斷面積 (m²)</label><input type="number" step="0.01" value="'+station.fill+'" oninput="updateStation('+index+',\'fill\',this.value)"></div>'+
+      '</div>'+
+      '<div class="station-tip">'+(isFirst?'首站距離欄位僅供記錄，計算時不使用。':'本列距離 L 代表前一測站至本測站之間距。')+'</div>'+
+    '</div>';
+}
+
+function renderStations(){
+  document.getElementById('ew-stations').innerHTML=ewStations.map(stationRowHtml).join('');
+}
+
+function parseNum(value){
+  var n=parseFloat(value);
+  return isNaN(n)?0:n;
+}
+
+function updateStation(index,key,value){
+  ewStations[index][key]=parseNum(value);
+}
+
+function addStation(){
+  var last=ewStations[ewStations.length-1]||{distance:0,cut:0,fill:0};
+  ewStations.push({distance:last.distance||0,cut:0,fill:0});
+  renderStations();
+}
+
+function deleteStation(index){
+  if(ewStations.length<=2){return;}
+  ewStations.splice(index,1);
+  renderStations();
+  calcEW();
+}
+
+function calcEarthwork(stations){
+  var segments=[];
+  var totalCut=0;
+  var totalFill=0;
+  for(var i=1;i<stations.length;i++){
+    var prev=stations[i-1];
+    var curr=stations[i];
+    var L=parseNum(curr.distance);
+    var cutVolume=L*(parseNum(prev.cut)+parseNum(curr.cut))/2;
+    var fillVolume=L*(parseNum(prev.fill)+parseNum(curr.fill))/2;
+    totalCut+=cutVolume;
+    totalFill+=fillVolume;
+    segments.push({
+      label:'測站'+i+'→'+(i+1),
+      distance:L,
+      cutVolume:cutVolume,
+      fillVolume:fillVolume,
+      totalCut:totalCut,
+      totalFill:totalFill,
+      prevCut:parseNum(prev.cut),
+      currCut:parseNum(curr.cut),
+      prevFill:parseNum(prev.fill),
+      currFill:parseNum(curr.fill)
+    });
+  }
+  return {
+    segments:segments,
+    totalCut:totalCut,
+    totalFill:totalFill,
+    net:totalCut-totalFill
+  };
+}
+
+function netLabel(net){
+  if(net>0){return '淨開挖（需外運）';}
+  if(net<0){return '淨回填（需借土）';}
+  return '開挖回填平衡';
+}
+
+function calcEW(){
+  var calc=calcEarthwork(ewStations);
+  if(ewStations.length<2){
+    document.getElementById('ew-result').innerHTML='<p class="ng">至少需輸入 2 個測站。</p>';
+    document.getElementById('ew-proc').style.display='none';
+    return calc;
+  }
+
+  var rows=calc.segments.map(function(seg){
+    return '<tr>'+
+      '<td>'+seg.label+'</td>'+
+      '<td class="num">'+f2(seg.distance)+'</td>'+
+      '<td class="num">'+f2(seg.totalCut)+'</td>'+
+      '<td class="num">'+f2(seg.totalFill)+'</td>'+
+    '</tr>';
+  }).join('');
+
+  rows+='<tr>'+
+    '<td><strong>合計</strong></td>'+
+    '<td class="num">-</td>'+
+    '<td class="num">'+f2(calc.totalCut)+'</td>'+
+    '<td class="num">'+f2(calc.totalFill)+'</td>'+
+  '</tr>';
+
+  var netClass=calc.net>=0?'ok':'ng';
+  var netText=(calc.net>=0?f2(calc.net):('-'+f2(Math.abs(calc.net))))+' m³';
+
+  document.getElementById('ew-result').innerHTML=
+    '<div class="summary-strip">'+
+      '<div class="summary-box"><strong>總開挖量</strong><span>'+f2(calc.totalCut)+' m³</span><em>各區間開挖體積加總</em></div>'+
+      '<div class="summary-box"><strong>總回填量</strong><span>'+f2(calc.totalFill)+' m³</span><em>各區間回填體積加總</em></div>'+
+      '<div class="summary-box"><strong>淨方量</strong><span class="'+netClass+'">'+netText+'</span><em>'+netLabel(calc.net)+'</em></div>'+
+    '</div>'+
+    '<table>'+
+      '<tr><th>區間</th><th>距離 L (m)</th><th>累積開挖量 (m³)</th><th>累積回填量 (m³)</th></tr>'+
+      rows+
+      '<tr><td colspan="4"><strong>淨方量：</strong><span class="'+netClass+'">'+netText+'，'+netLabel(calc.net)+'</span></td></tr>'+
+    '</table>';
+
+  var p='';
+  p+='【土方開挖回填計算過程】\n\n';
+  p+='一、計算方法\n';
+  p+='  採用平均端面積法（Average End Area Method）。\n';
+  p+='  各區間體積以相鄰兩測站斷面積平均值乘以測站距離計算。\n\n';
+  p+='二、輸入測站資料\n';
+  ewStations.forEach(function(st,index){
+    p+='  測站'+(index+1)+'：距離 = '+f2(parseNum(st.distance))+' m，開挖斷面積 = '+f2(parseNum(st.cut))+' m²，回填斷面積 = '+f2(parseNum(st.fill))+' m²\n';
+  });
+  p+='\n三、逐區間計算\n';
+  if(!calc.segments.length){
+    p+='  測站不足，無法形成計算區間。\n';
+  }else{
+    calc.segments.forEach(function(seg){
+      p+='  1. '+seg.label+'，距離 L = '+f2(seg.distance)+' m\n';
+      p+='     開挖量 = L × (A₁ + A₂) / 2 = '+f2(seg.distance)+' × ('+f2(seg.prevCut)+' + '+f2(seg.currCut)+') / 2 = '+f2(seg.cutVolume)+' m³\n';
+      p+='     回填量 = L × (B₁ + B₂) / 2 = '+f2(seg.distance)+' × ('+f2(seg.prevFill)+' + '+f2(seg.currFill)+') / 2 = '+f2(seg.fillVolume)+' m³\n';
+      p+='     累積開挖量 = '+f2(seg.totalCut)+' m³；累積回填量 = '+f2(seg.totalFill)+' m³\n';
+    });
+  }
+  p+='\n四、總量彙整\n';
+  p+='  總開挖量 = '+f2(calc.totalCut)+' m³\n';
+  p+='  總回填量 = '+f2(calc.totalFill)+' m³\n';
+  p+='  淨方量 = 總開挖量 - 總回填量 = '+f2(calc.totalCut)+' - '+f2(calc.totalFill)+' = '+f2(calc.net)+' m³\n';
+  p+='  判讀：'+netLabel(calc.net)+'\n';
+  document.getElementById('ew-proc-text').textContent=p;
+  document.getElementById('ew-proc').style.display='';
+  if(window.innerWidth<768){var b=document.getElementById('mobTab-ew-r');if(b)switchMobTab('ew-r',b);}
+  return calc;
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  var dateInput=document.getElementById('pj-date');
+  if(dateInput && !dateInput.value){dateInput.value=new Date().toISOString().slice(0,10);}
+  renderStations();
+  var calc=calcEW();
+  console.log('Earthwork default computed values:',{
+    totalCut:calc.totalCut,
+    totalFill:calc.totalFill,
+    net:calc.net
+  });
+});
+</script>
+<script>
+window.jrhDocMeta={
+ "doc": "土方開挖回填計算書",
+ "codes": [
+  "平均端面積法（Average End Area Method）— 工程測量學標準土方計算法"
+ ],
+ "notes": [
+  "斷面積應由實測地形或設計斷面圖精確量取，本工具僅計算體積，不含壓實/鬆方係數換算",
+  "地質條件複雜或斷面變化劇烈路段建議加密測站或改用稜柱體公式(Prismoidal Formula)提高精度",
+  "本計算書應經測量或土木工程技師簽證後，始得作為正式送審文件。"
+ ]
+};
+</script>
+</body>
+</html>
