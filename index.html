@@ -139,6 +139,7 @@
   </div>
   <div class="card" data-tab="ew-r">
     <h2>計算結果</h2>
+    <div id="ew-diagram"></div>
     <div id="ew-result"><p style="color:#888">尚未計算</p></div>
     <details class="proc" id="ew-proc" style="display:none">
       <summary>📋 計算過程（供第三方檢核）</summary>
@@ -249,13 +250,55 @@ function netLabel(net){
   return '開挖回填平衡';
 }
 
+/* 縱剖面示意圖：開挖斷面積畫在基準線上方、回填斷面積畫在下方，各測站間以
+   直線相連——與平均端面積法「相鄰測站斷面積平均」的假設一致，不是另外畫
+   一條平滑曲線騙人好看。 */
+function buildEWDiagram(stations,totalCut,totalFill,net){
+  var W=460,H=280,padL=44,padR=20,padT=50,padB=34;
+  var cumX=[0];
+  for(var i=1;i<stations.length;i++){cumX.push(cumX[i-1]+parseNum(stations[i].distance));}
+  var totalX=cumX[cumX.length-1]||1;
+  var cuts=stations.map(function(s){return parseNum(s.cut);});
+  var fills=stations.map(function(s){return parseNum(s.fill);});
+  var maxCut=Math.max.apply(null,cuts.concat([1]));
+  var maxFill=Math.max.apply(null,fills.concat([1]));
+  var drawW=W-padL-padR, drawH=H-padT-padB;
+  var scaleX=drawW/totalX;
+  var scaleY=(drawH/2)/Math.max(maxCut,maxFill,1);
+  var baseY=padT+drawH/2;
+  function sx(x){return padL+x*scaleX;}
+  function syCut(a){return baseY-a*scaleY;}
+  function syFill(a){return baseY+a*scaleY;}
+
+  var D=JRH.diagram, s='';
+  s+=D.label(14,16,'測站斷面積縱剖面示意圖（依平均端面積法區間線性連接）',{anchor:'start',size:8,color:'#8a8370'});
+  s+='<line x1="'+padL+'" y1="'+baseY+'" x2="'+(padL+drawW)+'" y2="'+baseY+'" stroke="#9a9382" stroke-width="1"/>';
+  var cutPts=cumX.map(function(x,i){return sx(x)+','+syCut(cuts[i]);}).join(' ');
+  s+='<polygon points="'+cutPts+' '+sx(totalX)+','+baseY+' '+sx(0)+','+baseY+'" fill="url(#jrhSoil)" stroke="#0b1f3a" stroke-width="1.4" opacity="0.9"/>';
+  var fillPts=cumX.map(function(x,i){return sx(x)+','+syFill(fills[i]);}).join(' ');
+  s+='<polygon points="'+fillPts+' '+sx(totalX)+','+baseY+' '+sx(0)+','+baseY+'" fill="#c9a14a" fill-opacity="0.35" stroke="#9a7b2a" stroke-width="1.4"/>';
+  stations.forEach(function(st,i){
+    var x=sx(cumX[i]);
+    s+='<line x1="'+x+'" y1="'+(baseY-6)+'" x2="'+x+'" y2="'+(baseY+6)+'" stroke="#5c5442" stroke-width="1"/>';
+    s+=D.label(x,baseY+20,'S'+(i+1),{size:7.5,color:'#5c5442'});
+  });
+  s+=D.label(padL,padT-10,'開挖 (m²)',{anchor:'start',size:8,color:'#0b1f3a',weight:'700'});
+  s+=D.label(padL,H-8,'回填 (m²)',{anchor:'start',size:8,color:'#9a7b2a',weight:'700'});
+  var netColor=net>=0?'#1a7d3a':'#c0392b';
+  s+=D.label(W-10,16,(net>=0?'淨開挖 ':'淨回填 ')+Math.abs(net).toFixed(1)+' m³',{anchor:'end',size:9,color:netColor,weight:'700'});
+  return D.wrap(W,H,s,{maxWidth:440});
+}
+
 function calcEW(){
   var calc=calcEarthwork(ewStations);
   if(ewStations.length<2){
     document.getElementById('ew-result').innerHTML='<p class="ng">至少需輸入 2 個測站。</p>';
     document.getElementById('ew-proc').style.display='none';
+    document.getElementById('ew-diagram').innerHTML='';
     return calc;
   }
+
+  if(window.JRH && JRH.diagram) document.getElementById('ew-diagram').innerHTML=buildEWDiagram(ewStations,calc.totalCut,calc.totalFill,calc.net);
 
   var rows=calc.segments.map(function(seg){
     return '<tr>'+
